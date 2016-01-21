@@ -1,0 +1,32 @@
+// ============================================================================
+//
+// Copyright (C) 2006-2016 Talend Inc. - www.talend.com
+//
+// This source code is available under agreement available at
+// %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
+//
+// You should have received a copy of the agreement
+// along with this program; if not, write to Talend SA
+// 9 rue Pages 92150 Suresnes, France
+//
+// ============================================================================
+package org.talend.component.core.model.mapping;
+
+import org.talend.components.api.NamedThing;
+import org.talend.components.api.properties.presentation.Widget;
+import org.talend.components.api.schema.SchemaElement;
+import org.talend.core.model.process.EParameterFieldType;
+
+/**
+ * created by hcyi on Jan 21, 2016 Detailled comment
+ *
+ */
+public class WidgetFieldTypeMapper {
+
+    private static final WidgetFieldTypeMappingReader mappingReader = new WidgetFieldTypeMappingReader();
+
+    public static EParameterFieldType getFieldType(Widget widget, NamedThing widgetProperty, SchemaElement se) {
+        String fieldType = mappingReader.getFieldType(widget.getWidgetType().name(), se != null ? se.getType().name() : null);
+        return fieldType != null ? EParameterFieldType.valueOf(fieldType.toUpperCase()) : null;
+    }
+}

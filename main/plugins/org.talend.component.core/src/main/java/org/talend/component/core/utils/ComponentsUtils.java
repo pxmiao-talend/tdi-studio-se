@@ -27,6 +27,7 @@ import org.talend.commons.exception.BusinessException;
 import org.talend.component.core.constants.IComponentConstants;
 import org.talend.component.core.model.Component;
 import org.talend.component.core.model.GenericElementParameter;
+import org.talend.component.core.model.mapping.WidgetFieldTypeMapper;
 import org.talend.components.api.NamedThing;
 import org.talend.components.api.component.ComponentDefinition;
 import org.talend.components.api.properties.ComponentProperties;
@@ -166,8 +167,8 @@ public class ComponentsUtils {
                 if (!isSameComponentProperties(componentProperties, widgetProperty)) {
                     propertiesPath = getPropertiesPath(parentPropertiesPath, subProperties.getName());
                 }
-                elementParameters.addAll(
-                        getParametersFromForm(element, compCategory, subProperties, propertiesPath, subForm, widget, lastRN));
+                elementParameters.addAll(getParametersFromForm(element, compCategory, subProperties, propertiesPath, subForm,
+                        widget, lastRN));
                 continue;
             }
 
@@ -270,76 +271,7 @@ public class ComponentsUtils {
      * @return
      */
     private static EParameterFieldType getFieldType(Widget widget, NamedThing widgetProperty, SchemaElement se) {
-        EParameterFieldType fieldType = null;
-        switch (widget.getWidgetType()) {
-        case DEFAULT:
-            if (se == null) {
-                fieldType = EParameterFieldType.LABEL;
-                break;
-            }
-            switch (se.getType()) {
-            case BOOLEAN:
-                fieldType = EParameterFieldType.CHECK;
-                break;
-            case BYTE_ARRAY:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case DATE:
-                fieldType = EParameterFieldType.DATE;
-                break;
-            case DATETIME:
-                fieldType = EParameterFieldType.DATE;
-                break;
-            case DECIMAL:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case DOUBLE:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case DYNAMIC:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case ENUM:
-                fieldType = EParameterFieldType.CLOSED_LIST;
-                break;
-            case FLOAT:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case INT:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case SCHEMA:
-                fieldType = EParameterFieldType.SCHEMA_TYPE;
-                break;
-            case STRING:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            default:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            }
-            break;
-        case BUTTON:
-            fieldType = EParameterFieldType.BUTTON;
-            break;
-        case COMPONENT_REFERENCE:
-            fieldType = EParameterFieldType.COMPONENT_REFERENCE;
-            break;
-        case NAME_SELECTION_AREA:
-            fieldType = EParameterFieldType.NAME_SELECTION_AREA;
-            break;
-        case NAME_SELECTION_REFERENCE:
-            fieldType = EParameterFieldType.NAME_SELECTION_REFERENCE;
-            break;
-        case SCHEMA_EDITOR:
-            break;
-        case SCHEMA_REFERENCE:
-            fieldType = EParameterFieldType.SCHEMA_TYPE;
-            break;
-        default:
-            break;
-        }
-        return fieldType;
+        return WidgetFieldTypeMapper.getFieldType(widget, widgetProperty, se);
     }
 
     public static ComponentProperties getCurrentComponentProperties(ComponentProperties componentProperties, String paramName) {
