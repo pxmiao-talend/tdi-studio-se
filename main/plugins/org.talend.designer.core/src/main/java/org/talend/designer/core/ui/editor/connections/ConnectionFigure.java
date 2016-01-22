@@ -313,6 +313,9 @@ public class ConnectionFigure extends PolylineConnectionEx implements IMapMode {
 
     private boolean isStartNodeFromJunit(Node linkNode) {
         Node startNode = linkNode.getNodeContainer().getSubjobContainer().getSubjobStartNode();
+        if (startNode == null) {
+            return false;
+        }
         Node jNode = (Node) linkNode.getJunitNode();
         Node startJNode = (Node) startNode.getJunitNode();
         if (jNode != null && startJNode != null && jNode == startJNode) {

@@ -35,15 +35,20 @@ import org.talend.designer.core.DesignerPlugin;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.process.AbstractProcessProvider;
 import org.talend.designer.core.ui.editor.connections.ConnLabelEditPart;
+import org.talend.designer.core.ui.editor.connections.Connection;
+import org.talend.designer.core.ui.editor.connections.ConnectionLabel;
 import org.talend.designer.core.ui.editor.connections.ConnectionPart;
 import org.talend.designer.core.ui.editor.jobletcontainer.JobletContainer;
 import org.talend.designer.core.ui.editor.jobletcontainer.JobletContainerFigure;
 import org.talend.designer.core.ui.editor.jobletcontainer.JobletContainerPart;
+import org.talend.designer.core.ui.editor.nodecontainer.NodeContainer;
 import org.talend.designer.core.ui.editor.nodecontainer.NodeContainerPart;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.nodes.NodePart;
+import org.talend.designer.core.ui.editor.notes.Note;
 import org.talend.designer.core.ui.editor.notes.NoteEditPart;
 import org.talend.designer.core.ui.editor.process.ProcessPart;
+import org.talend.designer.core.ui.editor.subjobcontainer.SubjobContainer;
 import org.talend.designer.core.ui.editor.subjobcontainer.SubjobContainerPart;
 import org.talend.designer.core.ui.preferences.TalendDesignerPrefConstants;
 
@@ -74,10 +79,17 @@ public class GEFDeleteAction extends DeleteAction {
             boolean allJobletnode = true;
             boolean allJunitnode = true;
             boolean hasNode = false;
+            int i = 0;
             for (Object o : objects) {
                 if (o instanceof NodePart) {
                     hasNode = true;
                     Node no = (Node) ((NodePart) o).getModel();
+                    if (no.getProcess().isReadOnly()) {
+                        return false;
+                    }
+                    if (no.isReadOnly()) {
+                        i++;
+                    }
                     if (no.getJobletNode() == null) {
                         allJobletnode = false;
                     }
@@ -87,9 +99,56 @@ public class GEFDeleteAction extends DeleteAction {
                     if (!pProvider.canDeleteNode(no)) {
                         return false;
                     }
+                } else if (o instanceof ConnectionPart) {
+                    Connection conn = (Connection) ((ConnectionPart) o).getModel();
+                    if (conn.getSource().getProcess().isReadOnly()) {
+                        return false;
+                    }
+                    if (conn.isReadOnly()) {
+                        i++;
+                    }
+
+                } else if (o instanceof ConnLabelEditPart) {
+                    ConnectionLabel connLabel = (ConnectionLabel) ((ConnLabelEditPart) o).getModel();
+                    if (connLabel.getConnection().getSource().getProcess().isReadOnly()) {
+                        return false;
+                    }
+                    if (connLabel.getConnection().isReadOnly()) {
+                        i++;
+                    }
+                } else if (o instanceof NoteEditPart) {
+                    allJobletnode = false;
+                    allJunitnode = false;
+                    Note note = (Note) ((NoteEditPart) o).getModel();
+                    if (note.isReadOnly()) {
+                        i++;
+                    }
+                } else if (o instanceof SubjobContainerPart) {
+                    SubjobContainer subjob = (SubjobContainer) ((SubjobContainerPart) o).getModel();
+                    if (subjob.getProcess().isReadOnly()) {
+                        return false;
+                    }
+                    if (subjob.isReadOnly()) {
+                        i++;
+                        continue;
+                    }
+                    boolean isAllReadonly = true;
+                    boolean subjobAllJunit = true;
+                    for (NodeContainer nc : subjob.getNodeContainers()) {
+                        Node node = nc.getNode();
+                        if (!node.isReadOnly()) {
+                            isAllReadonly = false;
+                        }
+                        if (node.getJunitNode() == null) {
+                            subjobAllJunit = false;
+                        }
+                    }
+                    if (isAllReadonly || subjobAllJunit) {
+                        i++;
+                    }
                 }
             }
-            if ((allJobletnode || allJunitnode) && hasNode) {
+            if (((allJobletnode || allJunitnode) && hasNode) || i == objects.size()) {
                 return false;
             }
         }
@@ -204,6 +263,10 @@ public class GEFDeleteAction extends DeleteAction {
                     }
                     NodePart nodePart = nodeContainerPart.getNodePart();
                     if (nodePart != null) {
+                        Node model = (Node) nodePart.getModel();
+                        if (model.getJunitNode() != null) {
+                            continue;
+                        }
                         nodeParts.add(nodePart);
                     }
                 }
