@@ -18,6 +18,8 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.SafeRunner;
+import org.talend.components.api.NamedThing;
+import org.talend.components.api.properties.Property;
 import org.talend.components.api.properties.presentation.Widget;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.utils.RegistryReader;
@@ -80,15 +82,27 @@ class WidgetFieldTypeMappingReader extends RegistryReader {
         return false;
     }
 
-    public String getFieldType(String widgetType, String schemaType) {
-        WidgetFieldTypeMappingReader.getInstance().init();
+    public String getFieldType(String widgetType, NamedThing widgetProperty, String schemaType) {
+        init();
+        String fieldType = null;
         if (Widget.WidgetType.DEFAULT.name().equals(widgetType)) {
             if (schemaType == null) {
                 return EParameterFieldType.LABEL.getName();
             }
-            return WidgetFieldTypeMappingReader.getInstance().allDynamicWidgetFieldType.get(widgetType + "+" + schemaType);//$NON-NLS-1$
+            if (widgetProperty != null && widgetProperty instanceof Property) {
+                Property prop = (Property) widgetProperty;
+                if (prop.isFlag(Property.Flags.ENCRYPT) || prop.isFlag(Property.Flags.UI_PASSWORD)) {
+                    return EParameterFieldType.PASSWORD.getName();
+                }
+            }
+            fieldType = this.allDynamicWidgetFieldType.get(widgetType + "+" + schemaType);//$NON-NLS-1$
+            if (fieldType != null) {
+                return fieldType;
+            } else {
+                return EParameterFieldType.TEXT.getName();
+            }
         } else {
-            return WidgetFieldTypeMappingReader.getInstance().allDynamicWidgetFieldType.get(widgetType);
+            return this.allDynamicWidgetFieldType.get(widgetType);
         }
     }
 }

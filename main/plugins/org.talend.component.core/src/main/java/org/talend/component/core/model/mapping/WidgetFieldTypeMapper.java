@@ -26,7 +26,10 @@ public class WidgetFieldTypeMapper {
     private static final WidgetFieldTypeMappingReader mappingReader = new WidgetFieldTypeMappingReader();
 
     public static EParameterFieldType getFieldType(Widget widget, NamedThing widgetProperty, SchemaElement se) {
-        String fieldType = mappingReader.getFieldType(widget.getWidgetType().name(), se != null ? se.getType().name() : null);
+        // init
+        mappingReader.init();
+        String fieldType = mappingReader.getFieldType(widget.getWidgetType().name(), widgetProperty, se != null ? se.getType()
+                .name() : null);
         return fieldType != null ? EParameterFieldType.valueOf(fieldType.toUpperCase()) : null;
     }
 }
