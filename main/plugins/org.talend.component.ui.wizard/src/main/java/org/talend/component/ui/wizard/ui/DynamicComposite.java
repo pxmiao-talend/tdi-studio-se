@@ -166,8 +166,11 @@ public class DynamicComposite extends MultipleThreadDynamicComposite implements 
                                 if (oldParameter.isShow(oldParameters) && (repositoryValue != null)
                                         && (!parameter.getName().equals(EParameterName.PROPERTY_TYPE.getName()))
                                         && parameter.getCategory() == section) {
-                                    parameter.setRepositoryValueUsed(true);
-                                    parameter.setReadOnly(true);
+                                    if (oldParameter.isRepositoryValueUsed()) {
+                                        parameter.setReadOnly(true);
+                                    } else {
+                                        parameter.setReadOnly(false);
+                                    }
                                 }
                             }
                         }

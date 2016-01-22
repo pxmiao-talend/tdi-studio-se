@@ -18,6 +18,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.SafeRunner;
+import org.talend.component.core.constants.IComponentConstants;
 import org.talend.components.api.NamedThing;
 import org.talend.components.api.properties.Property;
 import org.talend.components.api.properties.presentation.Widget;
@@ -50,7 +51,7 @@ class WidgetFieldTypeMappingReader extends RegistryReader {
     }
 
     protected WidgetFieldTypeMappingReader() {
-        super("org.talend.component.core", "fieldType_mapping"); //$NON-NLS-1$  //$NON-NLS-2$
+        super(IComponentConstants.PLUGIN_ID, "fieldType_mapping"); //$NON-NLS-1$  
     }
 
     void init() {
