@@ -138,7 +138,7 @@ public class PushToPaletteActionProvider extends CommonActionProvider {
                         File sourceFile = selectedFolder.getRawLocation().toFile();
                         String sourceComponentFolder = sourceFile.getAbsolutePath();
                         String targetComponentFolder = targetFile.getAbsolutePath() + File.separator + sourceFile.getName();
-
+                        FileCopy.deleteFiles(new File(targetComponentFolder));
                         FileCopy.copyComponentFolder(sourceComponentFolder, targetComponentFolder, true);
 
                     }

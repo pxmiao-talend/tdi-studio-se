@@ -98,6 +98,22 @@ public class FileCopy {
         }
     }
 
+    public static boolean deleteFiles(File targetFolder) {
+        if (targetFolder.exists()) {
+            if (targetFolder.isDirectory()) {
+                String[] children = targetFolder.list();
+                for (String element : children) {
+                    boolean success = deleteFiles(new File(targetFolder, element));
+                    if (!success) {
+                        return false;
+                    }
+                }
+            }
+            return targetFolder.delete();
+        }
+        return false;
+    }
+
     /**
      * DOC slanglois Comment method "copyComponentFolder".
      * 
