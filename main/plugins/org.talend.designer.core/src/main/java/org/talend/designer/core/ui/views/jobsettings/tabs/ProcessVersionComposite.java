@@ -1,6 +1,6 @@
 // ============================================================================
 //
-// Copyright (C) 2006-2015 Talend Inc. - www.talend.com
+// Copyright (C) 2006-2016 Talend Inc. - www.talend.com
 //
 // This source code is available under agreement available at
 // %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
@@ -114,7 +114,7 @@ public class ProcessVersionComposite extends AbstractTabComposite {
         thisFormData.bottom = new FormAttachment(100, 0);
         setLayoutData(thisFormData);
 
-        tableViewer = new TableViewer(this, SWT.BORDER | SWT.MULTI | SWT.FULL_SELECTION);
+        tableViewer = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
         final Table table = tableViewer.getTable();
         TableLayout tableLayout = new TableLayout();
         table.setLayout(tableLayout);

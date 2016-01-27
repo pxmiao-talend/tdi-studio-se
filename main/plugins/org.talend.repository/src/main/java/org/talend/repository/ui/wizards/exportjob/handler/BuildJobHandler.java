@@ -1,6 +1,6 @@
 // ============================================================================
 //
-// Copyright (C) 2006-2015 Talend Inc. - www.talend.com
+// Copyright (C) 2006-2016 Talend Inc. - www.talend.com
 //
 // This source code is available under agreement available at
 // %InstallDIR%\features\org.talend.rcp.branding.%PRODUCTNAME%\%PRODUCTNAME%license.txt
@@ -78,6 +78,7 @@ public class BuildJobHandler extends AbstractBuildJobHandler {
         super(processItem, version, contextName, exportChoiceMap);
 
         setProjectNameLowerCase(true);
+        ProcessorUtilities.setExportConfig(JavaUtils.JAVA_APP_NAME, null, null);
     }
 
     public boolean isProjectNameLowerCase() {
@@ -144,7 +145,6 @@ public class BuildJobHandler extends AbstractBuildJobHandler {
         }
         argumentsMap.put(TalendProcessArgumentConstant.ARG_GENERATE_OPTION, generationOption);
 
-        ProcessorUtilities.setExportConfig(JavaUtils.JAVA_APP_NAME, null, null);
         IProcessor processor = ProcessorUtilities.generateCode(processItem, contextName, version, argumentsMap, monitor);
         ProcessorUtilities.resetExportConfig();
         return processor;
