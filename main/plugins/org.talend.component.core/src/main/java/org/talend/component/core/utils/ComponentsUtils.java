@@ -207,7 +207,14 @@ public class ComponentsUtils {
             } else {
                 Property property = componentProperties.getValuedProperty(se.getName());
                 if (property != null) {
+                    // set the repositoryValue
+                    Object repositoryValueObj = property.getTaggedValue(parameterName);
+                    if (repositoryValueObj != null) {
+                        param.setRepositoryValue(repositoryValueObj.toString());
+                    }
                     param.setRequired(property.isRequired());
+                    // set the default value
+                    param.setDefaultValue(property.getDefaultValue());
                     param.setValue(property.getValue());
                     param.setSupportContext(isSupportContext(property));
                     List<?> values = property.getPossibleValues();
