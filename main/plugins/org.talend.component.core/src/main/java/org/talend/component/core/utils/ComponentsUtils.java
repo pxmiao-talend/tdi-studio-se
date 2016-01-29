@@ -177,7 +177,6 @@ public class ComponentsUtils {
             String parameterName = propertiesPath.concat(param.getName());
             param.setName(parameterName);
             param.setCategory(compCategory);
-            param.setRepositoryValue(parameterName);
             param.setShow(parentWidget == null ? widget.isVisible() : parentWidget.isVisible() && widget.isVisible());
             int rowNum = 0;
             if (widget.getOrder() != 1) {
@@ -208,9 +207,13 @@ public class ComponentsUtils {
                 Property property = componentProperties.getValuedProperty(se.getName());
                 if (property != null) {
                     // set the repositoryValue
-                    Object repositoryValueObj = property.getTaggedValue(parameterName);
-                    if (repositoryValueObj != null) {
-                        param.setRepositoryValue(repositoryValueObj.toString());
+                    Object repositoryValueObj = property.getTaggedValue(IComponentConstants.REPOSITORY_VALUE);
+                    boolean shouldRepositoryValueUsed = IComponentConstants.MODULENAME.equalsIgnoreCase(property.getName())
+                            || IComponentConstants.SCHEMA.equalsIgnoreCase(property.getName())
+                            || IComponentConstants.QUERYMODE.equalsIgnoreCase(property.getName())
+                            || IComponentConstants.OUTPUTACTION.equalsIgnoreCase(property.getName());
+                    if (repositoryValueObj != null || shouldRepositoryValueUsed) {
+                        param.setRepositoryValue(parameterName);
                     }
                     param.setRequired(property.isRequired());
                     // set the default value
