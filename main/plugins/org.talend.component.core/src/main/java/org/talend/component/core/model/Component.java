@@ -748,8 +748,8 @@ public class Component extends AbstractComponent {
             props = node.getComponentProperties();
             form = props.getForm(advanced ? IComponentConstants.FORM_ADVANCED : IComponentConstants.FORM_MAIN);
         }
-        listParam.addAll(
-                ComponentsUtils.getParametersFromForm(node, category, node.getComponentProperties(), null, form, null, null));
+        listParam.addAll(ComponentsUtils.getParametersFromForm(node, category, node.getComponentProperties(), null, form, null,
+                null));
     }
 
     private void initializePropertyParameters(List<ElementParameter> listParam, final INode node) {
@@ -791,8 +791,8 @@ public class Component extends AbstractComponent {
                             param.setValue(defaultValue);
                             if (param.getFieldType() == EParameterFieldType.ENCODING_TYPE) {
                                 String encodingType = TalendTextUtils.removeQuotes((String) defaultValue);
-                                IElementParameter elementParameter = param.getChildParameters()
-                                        .get(EParameterName.ENCODING_TYPE.getName());
+                                IElementParameter elementParameter = param.getChildParameters().get(
+                                        EParameterName.ENCODING_TYPE.getName());
                                 if (elementParameter != null) {
                                     elementParameter.setValue(encodingType);
                                 }
@@ -1135,7 +1135,7 @@ public class Component extends AbstractComponent {
             if (currentType == null || ("LOOKUP").equals(connectorName) || ("MERGE").equals(connectorName)) {//$NON-NLS-1$//$NON-NLS-2$
                 if (currentType == null) {
                     log.warn(Messages.getString("Component.componentNotExist", this.getName() //$NON-NLS-1$
-                    , connectorName));
+                            , connectorName));
                 }
                 continue;
             }
@@ -1739,8 +1739,8 @@ public class Component extends AbstractComponent {
             Deserialized fromSerialized = ComponentProperties.fromSerialized(serialized);
             if (fromSerialized != null) {
                 ComponentProperties componentProperties = fromSerialized.properties;
-                ((GenericElementParameter) param).setComponentProperties(
-                        ComponentsUtils.getCurrentComponentProperties(componentProperties, param.getName()));
+                ((GenericElementParameter) param).setComponentProperties(ComponentsUtils.getCurrentComponentProperties(
+                        componentProperties, param.getName()));
             }
         }
     }
@@ -1772,5 +1772,21 @@ public class Component extends AbstractComponent {
             ComponentProperties componentProperties = ComponentsUtils.getComponentProperties(getName());
             return componentProperties.toSerialized();
         }
+    }
+
+    @Override
+    public Object getElementParameterValueFromComponentProperties(INode iNode, IElementParameter param) {
+        if (iNode != null) {
+            ComponentProperties iNodeComponentProperties = iNode.getComponentProperties();
+            if (iNodeComponentProperties != null && param instanceof GenericElementParameter) {
+                ComponentProperties paramComponentProperties = ComponentsUtils.getCurrentComponentProperties(
+                        iNodeComponentProperties, param.getName());
+                if (paramComponentProperties != null) {
+                    ((GenericElementParameter) param).setComponentProperties(paramComponentProperties);
+                    return ComponentsUtils.getGenericPropertyValue(iNodeComponentProperties, param.getName());
+                }
+            }
+        }
+        return null;
     }
 }
