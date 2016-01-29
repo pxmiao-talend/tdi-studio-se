@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Test of component
+Bundle-SymbolicName: org.talend.component.core.test
+Bundle-Version: 6.2.0.qualifier
+Fragment-Host: org.talend.component.core
+Require-Bundle: org.talend.testutils
