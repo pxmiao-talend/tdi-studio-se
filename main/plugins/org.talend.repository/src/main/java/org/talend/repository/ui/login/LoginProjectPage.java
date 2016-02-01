@@ -1711,8 +1711,8 @@ public class LoginProjectPage extends AbstractLoginActionPage {
     }
 
     private void selectProject(Project goodProject) throws JSONException {
-        fillUIBranches(goodProject, true);
         projectViewer.setSelection(new StructuredSelection(new Object[] { goodProject }), true);
+        fillUIBranches(goodProject, true);
         // if (PluginChecker.isTIS()) {
         // }
         setRepositoryContextInContext();
