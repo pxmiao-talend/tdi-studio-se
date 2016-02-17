@@ -20,6 +20,8 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.internal.ui.text.java.hover.SourceViewerInformationControl;
+import org.eclipse.jface.bindings.keys.KeyStroke;
+import org.eclipse.jface.bindings.keys.ParseException;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
@@ -70,6 +72,7 @@ import org.eclipse.ui.texteditor.MarkerAnnotationPreferences;
 import org.eclipse.ui.texteditor.SourceViewerDecorationSupport;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.image.ImageProvider;
+import org.talend.commons.ui.swt.preferences.HotKeyUtil;
 import org.talend.commons.utils.threading.ExecutionLimiter;
 import org.talend.core.model.process.INode;
 
@@ -158,6 +161,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
 
         prependVerifyKeyListener(new VerifyKeyListener() {
 
+            @Override
             public void verifyKey(VerifyEvent event) {
                 handleVerifyKeyPressed(event);
             }
@@ -176,6 +180,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
                     if (getControl() != null && !getControl().isDisposed()) {
                         getControl().getDisplay().asyncExec(new Runnable() {
 
+                            @Override
                             public void run() {
                                 // System.out.println(System.currentTimeMillis())
                                 // ;
@@ -194,10 +199,12 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
 
         document.addDocumentListener(new IDocumentListener() {
 
+            @Override
             public void documentAboutToBeChanged(DocumentEvent event) {
                 // nothing
             }
 
+            @Override
             public void documentChanged(DocumentEvent event) {
                 documentReconcilerLimiter.resetTimer();
                 documentReconcilerLimiter.startIfExecutable(true, null);
@@ -213,6 +220,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
 
             Display.getDefault().asyncExec(new Runnable() {
 
+                @Override
                 public void run() {
                     if (!annotations.isEmpty() && getProjectionAnnotationModel() == null) {
                         enableProjection();
@@ -333,6 +341,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
         undoItem.setImage(image);
         undoItem.addListener(SWT.Selection, new Listener() {
 
+            @Override
             public void handleEvent(Event event) {
                 doOperation(ITextOperationTarget.UNDO);
                 event.doit = false;
@@ -346,6 +355,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
         redoItem.setImage(image);
         redoItem.addListener(SWT.Selection, new Listener() {
 
+            @Override
             public void handleEvent(Event event) {
                 doOperation(ITextOperationTarget.REDO);
                 event.doit = false;
@@ -361,6 +371,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
         copyItem.setImage(image);
         copyItem.addListener(SWT.Selection, new Listener() {
 
+            @Override
             public void handleEvent(Event event) {
                 getTextWidget().copy();
             }
@@ -373,6 +384,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
         pasteItem.setImage(image);
         pasteItem.addListener(SWT.Selection, new Listener() {
 
+            @Override
             public void handleEvent(Event event) {
                 getTextWidget().paste();
             }
@@ -382,6 +394,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
         selectAllItem.setText("Select All"); //$NON-NLS-1$
         selectAllItem.addListener(SWT.Selection, new Listener() {
 
+            @Override
             public void handleEvent(Event event) {
                 getTextWidget().selectAll();
             }
@@ -390,6 +403,7 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
 
         Listener selectAllListener = new Listener() {
 
+            @Override
             public void handleEvent(Event event) {
                 if (event.character == '\u0001') { // CTRL + A
                     getTextWidget().selectAll();
@@ -436,12 +450,14 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
         projectionSupport.addSummarizableAnnotationType("org.eclipse.ui.workbench.texteditor.warning"); //$NON-NLS-1$
         projectionSupport.setHoverControlCreator(new IInformationControlCreator() {
 
+            @Override
             public IInformationControl createInformationControl(Shell shell) {
                 return new SourceViewerInformationControl(shell, false, SWT.LEFT_TO_RIGHT, EditorsUI.getTooltipAffordanceString());
             }
         });
         projectionSupport.setInformationPresenterControlCreator(new IInformationControlCreator() {
 
+            @Override
             public IInformationControl createInformationControl(Shell shell) {
                 int shellStyle = SWT.RESIZE | SWT.TOOL | SWT.LEFT_TO_RIGHT;
                 int style = SWT.V_SCROLL | SWT.H_SCROLL;
@@ -454,6 +470,29 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
     private void handleVerifyKeyPressed(VerifyEvent event) {
         if (!event.doit) {
             return;
+        }
+        try {
+            KeyStroke triggerKeyStroke = HotKeyUtil.getHotKey(HotKeyUtil.contentAssist);
+            if (triggerKeyStroke != null) {
+                // Either there are no modifiers for the trigger and we
+                // check the character field...
+                if ((triggerKeyStroke.getModifierKeys() == KeyStroke.NO_KEY && triggerKeyStroke.getNaturalKey() == event.character)
+                        ||
+                        // ...or there are modifiers, in which case the
+                        // keycode and state must match
+                        (((triggerKeyStroke.getNaturalKey() == event.keyCode)
+                                || (Character.toLowerCase(triggerKeyStroke.getNaturalKey()) == event.keyCode) || (Character
+                                .toUpperCase(triggerKeyStroke.getNaturalKey()) == event.keyCode)) && ((triggerKeyStroke
+                                .getModifierKeys() & event.stateMask) == triggerKeyStroke.getModifierKeys()))) {
+                    // We never propagate the keystroke for an explicit
+                    // keystroke invocation of the popup
+                    doOperation(ISourceViewer.CONTENTASSIST_PROPOSALS);
+                    event.doit = false;
+                    return;
+                }
+            }
+        } catch (ParseException e) {
+            org.talend.commons.exception.ExceptionHandler.process(e);
         }
 
         if (event.stateMask != SWT.CTRL) {
@@ -472,13 +511,13 @@ public abstract class ReconcilerViewer extends ProjectionViewer {
             break;
 
         // CTRL-Y
-        case (int) 'y' - (int) 'a' + 1:
+        case 'y' - 'a' + 1:
             doOperation(ITextOperationTarget.REDO);
             event.doit = false;
             break;
 
         // CTRL-Z
-        case (int) 'z' - (int) 'a' + 1:
+        case 'z' - 'a' + 1:
             doOperation(ITextOperationTarget.UNDO);
             event.doit = false;
             break;
