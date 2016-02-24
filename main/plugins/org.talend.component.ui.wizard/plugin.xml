@@ -132,6 +132,11 @@
             mapping="COMPONENT_REFERENCE"
             name="Component Reference">
       </generator>
+      <generator
+            class="org.talend.component.ui.wizard.controller.generator.GenericPasswordGenerator"
+            mapping="PASSWORD"
+            name="Password">
+      </generator>
    </extension>
    <extension
          point="org.talend.core.repository.repository_content">

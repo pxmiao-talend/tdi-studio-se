@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
+   <extension-point id="fieldType_mapping" name="FieldType Mapping" schema="schema/fieldType_mapping.exsd"/>
    <extension
          point="org.talend.designer.core.process_provider">
       <ProcessProvider
@@ -30,6 +31,122 @@
             version="6.1.0">
         </projecttask>
        -->
+   </extension>
+   <extension
+         point="org.talend.component.core.fieldType_mapping">
+      <Mapping
+            mapFieldType="CHECK"
+            name="DEFAULT+BOOLEAN"
+            schemaType="BOOLEAN"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+BYTE_ARRAY"
+            schemaType="BYTE_ARRAY"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="DATE"
+            name="DEFAULT+DATE"
+            schemaType="DATE"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="DATE"
+            name="DEFAULT+DATETIME"
+            schemaType="DATETIME"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+DECIMAL"
+            schemaType="DECIMAL"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+DOUBLE"
+            schemaType="DOUBLE"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+DYNAMIC"
+            schemaType="DYNAMIC"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="CLOSED_LIST"
+            name="DEFAULT+ENUM"
+            schemaType="ENUM"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+FLOAT"
+            schemaType="FLOAT"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+INT"
+            schemaType="INT"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="SCHEMA_TYPE"
+            name="DEFAULT+SCHEMA"
+            schemaType="SCHEMA"
+            widgetType="DEFAULT">
+      </Mapping>
+      <Mapping
+            mapFieldType="TEXT"
+            name="DEFAULT+STRING"
+            schemaType="STRING"
+            widgetType="DEFAULT">
+      </Mapping>
+      
+       <Mapping
+            mapFieldType="BUTTON"
+            name="BUTTON"
+            widgetType="BUTTON">
+      </Mapping>
+       <Mapping
+            mapFieldType="COMPONENT_REFERENCE"
+            name="COMPONENT_REFERENCE"
+            widgetType="COMPONENT_REFERENCE">
+      </Mapping>
+       <Mapping
+            mapFieldType="NAME_SELECTION_AREA"
+            name="NAME_SELECTION_AREA"
+            widgetType="NAME_SELECTION_AREA">
+      </Mapping>
+       <Mapping
+            mapFieldType="NAME_SELECTION_REFERENCE"
+            name="NAME_SELECTION_REFERENCE"
+            widgetType="NAME_SELECTION_REFERENCE">
+      </Mapping>
+      <Mapping
+             mapFieldType="SCHEMA_EDITOR"
+             name="SCHEMA_EDITOR"
+             widgetType="SCHEMA_EDITOR">
+       </Mapping>
+       <Mapping
+            mapFieldType="SCHEMA_TYPE"
+            name="SCHEMA_REFERENCE"
+            widgetType="SCHEMA_REFERENCE">
+      </Mapping>
+      <Mapping
+            mapFieldType="TABLE"
+            name="TABLE"
+            widgetType="TABLE">
+      </Mapping>
+       <Mapping
+            mapFieldType="HIDDEN_TEXT"
+            name="HIDDEN_TEXT"
+            widgetType="HIDDEN_TEXT">
+      </Mapping>
    </extension>
 
 </plugin>

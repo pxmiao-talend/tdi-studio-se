@@ -293,6 +293,13 @@ public class ChangeValuesFromRepository extends ChangeMetadataCommand {
                 if (param.getFieldType() == EParameterFieldType.PROPERTY_TYPE) {
                     continue;
                 }
+                boolean isGenericRepositoryValue = RepositoryToComponentProperty.isGenericRepositoryValue(connection,
+                        param.getName());
+                if (repositoryValue == null && isGenericRepositoryValue) {
+                    repositoryValue = param.getName();
+                    param.setRepositoryValue(repositoryValue);
+                    param.setRepositoryValueUsed(true);
+                }
                 if (repositoryValue == null || param.getRepositoryProperty() != null
                         && !param.getRepositoryProperty().equals(propertyParamName)) {
                     continue;

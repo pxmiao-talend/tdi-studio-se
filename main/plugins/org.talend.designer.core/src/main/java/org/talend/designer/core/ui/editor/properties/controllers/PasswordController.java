@@ -40,7 +40,7 @@ import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
  */
 public class PasswordController extends TextController {
 
-    private static final String PASSWORD = "PASSWORD"; //$NON-NLS-1$
+    protected static final String PASSWORD = "PASSWORD"; //$NON-NLS-1$
 
     /**
      * DOC nrousseau PasswordController constructor comment.
@@ -92,7 +92,7 @@ public class PasswordController extends TextController {
         return lastControlUsed;
     }
 
-    private Control addButton(Composite subComposite, IElementParameter param, Control lastControl, int numInRow, int nbInRow,
+    protected Control addButton(Composite subComposite, IElementParameter param, Control lastControl, int numInRow, int nbInRow,
             int top) {
         Button btn;
         Control lastControlUsed = lastControl;

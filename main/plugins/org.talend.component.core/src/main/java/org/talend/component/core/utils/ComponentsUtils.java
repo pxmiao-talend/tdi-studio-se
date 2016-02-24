@@ -27,15 +27,9 @@ import org.talend.commons.exception.BusinessException;
 import org.talend.component.core.constants.IComponentConstants;
 import org.talend.component.core.model.Component;
 import org.talend.component.core.model.GenericElementParameter;
-import org.talend.components.api.NamedThing;
+import org.talend.component.core.model.mapping.WidgetFieldTypeMapper;
 import org.talend.components.api.component.ComponentDefinition;
 import org.talend.components.api.properties.ComponentProperties;
-import org.talend.components.api.properties.NameAndLabel;
-import org.talend.components.api.properties.Property;
-import org.talend.components.api.properties.presentation.Form;
-import org.talend.components.api.properties.presentation.Widget;
-import org.talend.components.api.schema.SchemaElement;
-import org.talend.components.api.schema.SchemaElement.Type;
 import org.talend.components.api.service.ComponentService;
 import org.talend.core.model.components.IComponent;
 import org.talend.core.model.components.IComponentsFactory;
@@ -45,6 +39,13 @@ import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.INode;
 import org.talend.core.ui.component.ComponentsFactoryProvider;
+import org.talend.daikon.NamedThing;
+import org.talend.daikon.properties.Properties.Deserialized;
+import org.talend.daikon.properties.Property;
+import org.talend.daikon.properties.presentation.Form;
+import org.talend.daikon.properties.presentation.Widget;
+import org.talend.daikon.schema.SchemaElement;
+import org.talend.daikon.schema.SchemaElement.Type;
 import org.talend.designer.core.model.components.ElementParameter;
 
 /**
@@ -141,7 +142,7 @@ public class ComponentsUtils {
         }
         ComponentProperties componentProperties = compProperties;
         if (componentProperties == null) {
-            componentProperties = form.getComponentProperties();
+            componentProperties = (ComponentProperties) form.getProperties();
         }
         if (element instanceof INode) {
             INode node = (INode) element;
@@ -151,23 +152,26 @@ public class ComponentsUtils {
             }
         }
 
+        // Dont use Value Evaluator here.
+        componentProperties.setValueEvaluator(null);
+
         // Have to initialize for the messages
         componentProperties.getProperties();
         List<Widget> formWidgets = form.getWidgets();
         for (Widget widget : formWidgets) {
-            NamedThing[] widgetProperties = widget.getProperties();
-            NamedThing widgetProperty = widgetProperties[0];
+
+            NamedThing widgetProperty = widget.getContent();
 
             String propertiesPath = getPropertiesPath(parentPropertiesPath, null);
             if (widgetProperty instanceof Form) {
                 Form subForm = (Form) widgetProperty;
-                ComponentProperties subProperties = subForm.getComponentProperties();
+                ComponentProperties subProperties = (ComponentProperties) subForm.getProperties();
                 // Reset properties path
                 if (!isSameComponentProperties(componentProperties, widgetProperty)) {
                     propertiesPath = getPropertiesPath(parentPropertiesPath, subProperties.getName());
                 }
-                elementParameters.addAll(
-                        getParametersFromForm(element, compCategory, subProperties, propertiesPath, subForm, widget, lastRN));
+                elementParameters.addAll(getParametersFromForm(element, compCategory, subProperties, propertiesPath, subForm,
+                        widget, lastRN));
                 continue;
             }
 
@@ -176,7 +180,6 @@ public class ComponentsUtils {
             String parameterName = propertiesPath.concat(param.getName());
             param.setName(parameterName);
             param.setCategory(compCategory);
-            param.setRepositoryValue(parameterName);
             param.setShow(parentWidget == null ? widget.isVisible() : parentWidget.isVisible() && widget.isVisible());
             int rowNum = 0;
             if (widget.getOrder() != 1) {
@@ -195,7 +198,7 @@ public class ComponentsUtils {
             SchemaElement se = null;
 
             if (widgetProperty instanceof SchemaElement) {
-                se = (SchemaElement) widgetProperties[0];
+                se = (SchemaElement) widgetProperty;
                 param.setContext(EConnectionType.FLOW_MAIN.getName());
             }
 
@@ -207,6 +210,8 @@ public class ComponentsUtils {
                 Property property = componentProperties.getValuedProperty(se.getName());
                 if (property != null) {
                     param.setRequired(property.isRequired());
+                    // set the default value
+                    param.setDefaultValue(property.getDefaultValue());
                     param.setValue(property.getValue());
                     param.setSupportContext(isSupportContext(property));
                     List<?> values = property.getPossibleValues();
@@ -215,10 +220,10 @@ public class ComponentsUtils {
                         List<String> possVals = new ArrayList<>();
                         List<String> possValsDisplay = new ArrayList<>();
                         for (Object obj : values) {
-                            if (obj instanceof NameAndLabel) {
-                                NameAndLabel nal = (NameAndLabel) obj;
+                            if (obj instanceof NamedThing) {
+                                NamedThing nal = (NamedThing) obj;
                                 possVals.add(nal.getName());
-                                possValsDisplay.add(nal.getLabel());
+                                possValsDisplay.add(nal.getDisplayName());
                             } else {
                                 possVals.add(String.valueOf(obj));
                                 possValsDisplay.add(String.valueOf(obj));
@@ -270,76 +275,7 @@ public class ComponentsUtils {
      * @return
      */
     private static EParameterFieldType getFieldType(Widget widget, NamedThing widgetProperty, SchemaElement se) {
-        EParameterFieldType fieldType = null;
-        switch (widget.getWidgetType()) {
-        case DEFAULT:
-            if (se == null) {
-                fieldType = EParameterFieldType.LABEL;
-                break;
-            }
-            switch (se.getType()) {
-            case BOOLEAN:
-                fieldType = EParameterFieldType.CHECK;
-                break;
-            case BYTE_ARRAY:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case DATE:
-                fieldType = EParameterFieldType.DATE;
-                break;
-            case DATETIME:
-                fieldType = EParameterFieldType.DATE;
-                break;
-            case DECIMAL:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case DOUBLE:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case DYNAMIC:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case ENUM:
-                fieldType = EParameterFieldType.CLOSED_LIST;
-                break;
-            case FLOAT:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case INT:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            case SCHEMA:
-                fieldType = EParameterFieldType.SCHEMA_TYPE;
-                break;
-            case STRING:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            default:
-                fieldType = EParameterFieldType.TEXT;
-                break;
-            }
-            break;
-        case BUTTON:
-            fieldType = EParameterFieldType.BUTTON;
-            break;
-        case COMPONENT_REFERENCE:
-            fieldType = EParameterFieldType.COMPONENT_REFERENCE;
-            break;
-        case NAME_SELECTION_AREA:
-            fieldType = EParameterFieldType.NAME_SELECTION_AREA;
-            break;
-        case NAME_SELECTION_REFERENCE:
-            fieldType = EParameterFieldType.NAME_SELECTION_REFERENCE;
-            break;
-        case SCHEMA_EDITOR:
-            break;
-        case SCHEMA_REFERENCE:
-            fieldType = EParameterFieldType.SCHEMA_TYPE;
-            break;
-        default:
-            break;
-        }
-        return fieldType;
+        return WidgetFieldTypeMapper.getFieldType(widget, widgetProperty, se);
     }
 
     public static ComponentProperties getCurrentComponentProperties(ComponentProperties componentProperties, String paramName) {
@@ -474,9 +410,20 @@ public class ComponentsUtils {
         if (componentProperties != null && widgetProperty instanceof Form) {
             Form subForm = (Form) widgetProperty;
             if (subForm != null) {
-                return componentProperties == subForm.getComponentProperties();
+                return componentProperties == subForm.getProperties();
             }
         }
         return false;
+    }
+
+    public static ComponentProperties getComponentPropertiesFromSerialized(String serialized) {
+        if (serialized != null) {
+            Deserialized<ComponentProperties> fromSerialized = ComponentProperties.fromSerialized(serialized,
+                    ComponentProperties.class);
+            if (fromSerialized != null) {
+                return fromSerialized.properties;
+            }
+        }
+        return null;
     }
 }

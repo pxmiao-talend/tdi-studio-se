@@ -25,19 +25,15 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.RGB;
 import org.talend.commons.exception.BusinessException;
 import org.talend.component.core.constants.IComponentConstants;
-import org.talend.component.core.i18n.Messages;
+import org.talend.component.core.context.ComponentContextPropertyValueEvaluator;
 import org.talend.component.core.utils.ComponentsUtils;
-import org.talend.components.api.NamedThing;
-import org.talend.components.api.component.ComponentConnector;
 import org.talend.components.api.component.ComponentDefinition;
 import org.talend.components.api.component.ComponentImageType;
+import org.talend.components.api.component.Connector;
+import org.talend.components.api.component.Trigger;
 import org.talend.components.api.properties.ComponentProperties;
-import org.talend.components.api.properties.ComponentProperties.Deserialized;
-import org.talend.components.api.properties.presentation.Form;
-import org.talend.components.api.schema.SchemaElement;
 import org.talend.components.api.service.ComponentService;
 import org.talend.core.CorePlugin;
 import org.talend.core.GlobalServiceRegister;
@@ -57,7 +53,13 @@ import org.talend.core.model.process.IProcess;
 import org.talend.core.model.temp.ECodePart;
 import org.talend.core.model.utils.TalendTextUtils;
 import org.talend.core.prefs.ITalendCorePrefConstants;
+import org.talend.core.runtime.services.ComponentServiceWithValueEvaluator;
 import org.talend.core.ui.services.IComponentsLocalProviderService;
+import org.talend.daikon.NamedThing;
+import org.talend.daikon.properties.Properties.Deserialized;
+import org.talend.daikon.properties.Property;
+import org.talend.daikon.properties.presentation.Form;
+import org.talend.daikon.schema.SchemaElement;
 import org.talend.designer.core.DesignerPlugin;
 import org.talend.designer.core.model.components.AbstractComponent;
 import org.talend.designer.core.model.components.DummyComponent;
@@ -748,8 +750,17 @@ public class Component extends AbstractComponent {
             props = node.getComponentProperties();
             form = props.getForm(advanced ? IComponentConstants.FORM_ADVANCED : IComponentConstants.FORM_MAIN);
         }
-        listParam.addAll(
-                ComponentsUtils.getParametersFromForm(node, category, node.getComponentProperties(), null, form, null, null));
+        List<ElementParameter> parameters = ComponentsUtils.getParametersFromForm(node, category, node.getComponentProperties(),
+                null, form, null, null);
+        ComponentService componentService = new ComponentServiceWithValueEvaluator(ComponentsUtils.getComponentService(),
+                new ComponentContextPropertyValueEvaluator(node));
+        for (ElementParameter parameter : parameters) {
+            if (parameter instanceof GenericElementParameter) {
+                GenericElementParameter genericElementParameter = (GenericElementParameter) parameter;
+                genericElementParameter.setComponentService(componentService);
+            }
+        }
+        listParam.addAll(parameters);
     }
 
     private void initializePropertyParameters(List<ElementParameter> listParam, final INode node) {
@@ -791,8 +802,8 @@ public class Component extends AbstractComponent {
                             param.setValue(defaultValue);
                             if (param.getFieldType() == EParameterFieldType.ENCODING_TYPE) {
                                 String encodingType = TalendTextUtils.removeQuotes((String) defaultValue);
-                                IElementParameter elementParameter = param.getChildParameters()
-                                        .get(EParameterName.ENCODING_TYPE.getName());
+                                IElementParameter elementParameter = param.getChildParameters().get(
+                                        EParameterName.ENCODING_TYPE.getName());
                                 if (elementParameter != null) {
                                     elementParameter.setValue(encodingType);
                                 }
@@ -841,7 +852,7 @@ public class Component extends AbstractComponent {
     /**
      * Sometimes the property parameters of schema are base on other parameters,but they might be initialized after the
      * schema. So there need to initialize the schema's again.
-     * 
+     *
      * @param listParam
      */
     private void initializePropertyParametersForSchema(List<ElementParameter> listParam, final INode node) {
@@ -1120,67 +1131,16 @@ public class Component extends AbstractComponent {
      */
     @Override
     public List<NodeConnector> createConnectors(INode parentNode) {
-        NodeConnector nodeConnector;
         List<NodeConnector> listConnector = new ArrayList<NodeConnector>();
-        ComponentConnector[] listConnectors = componentDefinition.getConnectors();
-        for (ComponentConnector componentConnector : listConnectors) {
-            String originalConnectorName = componentConnector.getType().name();
-            String connectorName = originalConnectorName;
-            boolean isFlow_Sub_ConnectorName = IComponentConstants.MAIN_CONNECTOR_NAME.equals(originalConnectorName)
-                    || IComponentConstants.REJECT_CONNECTOR_NAME.equals(originalConnectorName);
-            if (isFlow_Sub_ConnectorName) {
-                connectorName = "FLOW";//$NON-NLS-1$
-            }
-            EConnectionType currentType = EConnectionType.getTypeFromName(connectorName);
-            if (currentType == null || ("LOOKUP").equals(connectorName) || ("MERGE").equals(connectorName)) {//$NON-NLS-1$//$NON-NLS-2$
-                if (currentType == null) {
-                    log.warn(Messages.getString("Component.componentNotExist", this.getName() //$NON-NLS-1$
-                    , connectorName));
-                }
-                continue;
-            }
-            nodeConnector = new NodeConnector(parentNode);
-            nodeConnector.setDefaultConnectionType(currentType);
-            // set the default values
-            nodeConnector.setLinkName(currentType.getDefaultLinkName());
-            nodeConnector.setMenuName(currentType.getDefaultMenuName());
-            RGB rgb = currentType.getRGB();
-            Integer lineStyle = currentType.getDefaultLineStyle();
-            if (!isFlow_Sub_ConnectorName) {
-                nodeConnector.setMaxLinkInput(componentConnector.getMaxInput());
-            }
-            if ("FLOW".equals(connectorName) || "ITERATE".equals(connectorName)) {//$NON-NLS-1$//$NON-NLS-2$
-                nodeConnector.setMaxLinkOutput(componentConnector.getMaxOutput());
-            }
-            if (nodeConnector.getName() == null) {
-                if (isFlow_Sub_ConnectorName) {
-                    nodeConnector.setName(originalConnectorName);
-                    nodeConnector.setBaseSchema(currentType.getName());
-                    if (IComponentConstants.REJECT_CONNECTOR_NAME.equals(originalConnectorName)) {
-                        nodeConnector.setMenuName("Reject"); //$NON-NLS-1$
-                        nodeConnector.setLinkName("Reject"); //$NON-NLS-1$
-                    }
-                } else {
-                    nodeConnector.setName(connectorName);
-                    nodeConnector.setBaseSchema(currentType.getName());
-                }
-            }
-            nodeConnector.addConnectionProperty(currentType, rgb, lineStyle);
-            listConnector.add(nodeConnector);
-            if ("FLOW".equals(connectorName)) { //$NON-NLS-1$
-                // if kind is "flow" (main type), then add the same for the lookup and merge.
-                currentType = EConnectionType.FLOW_REF;
 
-                rgb = currentType.getRGB();
-                lineStyle = currentType.getDefaultLineStyle();
-                nodeConnector.addConnectionProperty(currentType, rgb, lineStyle);
-                nodeConnector.getConnectionProperty(currentType).setRGB(rgb);
-                currentType = EConnectionType.FLOW_MERGE;
-
-                rgb = currentType.getRGB();
-                lineStyle = currentType.getDefaultLineStyle();
-                nodeConnector.addConnectionProperty(currentType, rgb, lineStyle);
-                nodeConnector.getConnectionProperty(currentType).setRGB(rgb);
+        for (Connector connector : componentDefinition.getConnectors()) {
+            if (ComponentUtils.isAValidConnector(connector, getName())) {
+                listConnector.add(ComponentUtils.generateNodeConnectorFromConnector(connector, parentNode));
+            }
+        }
+        for (Trigger trigger : componentDefinition.getTriggers()) {
+            if (ComponentUtils.isAValidTrigger(trigger, getName())) {
+                listConnector.add(ComponentUtils.generateNodeConnectorFromTrigger(trigger, parentNode));
             }
         }
 
@@ -1197,7 +1157,7 @@ public class Component extends AbstractComponent {
                 }
             }
             if (!exists) { // will add by default all connectors not defined in
-                nodeConnector = new NodeConnector(parentNode);
+                NodeConnector nodeConnector = new NodeConnector(parentNode);
                 nodeConnector.setDefaultConnectionType(currentType);
                 nodeConnector.setName(currentType.getName());
                 nodeConnector.setBaseSchema(currentType.getName());
@@ -1338,7 +1298,7 @@ public class Component extends AbstractComponent {
 
     /**
      * Getter for icon32.
-     * 
+     *
      * @return the icon32
      */
     @Override
@@ -1485,7 +1445,7 @@ public class Component extends AbstractComponent {
     /**
      * get this component's repository type <br>
      * see <PARAMETER NAME="PROPERTY" ...> in the component's xml definition.
-     * 
+     *
      * @return
      */
     @Override
@@ -1511,7 +1471,7 @@ public class Component extends AbstractComponent {
 
     /**
      * Getter for type.
-     * 
+     *
      * @return the type
      */
     @Override
@@ -1541,7 +1501,7 @@ public class Component extends AbstractComponent {
 
     /**
      * Getter for reduce.
-     * 
+     *
      * @return the reduce
      */
     @Override
@@ -1581,7 +1541,7 @@ public class Component extends AbstractComponent {
 
     /**
      * Getter for provider.
-     * 
+     *
      * @return the provider
      */
     public ComponentsProvider getProvider() {
@@ -1590,7 +1550,7 @@ public class Component extends AbstractComponent {
 
     /**
      * Sets the provider.
-     * 
+     *
      * @param provider the provider to set
      */
     public void setProvider(ComponentsProvider provider) {
@@ -1729,18 +1689,19 @@ public class Component extends AbstractComponent {
     @Override
     public void initNodePropertiesFromSerialized(INode node, String serialized) {
         if (node != null) {
-            node.setComponentProperties(ComponentProperties.fromSerialized(serialized).properties);
+            node.setComponentProperties(ComponentProperties.fromSerialized(serialized, ComponentProperties.class).properties);
         }
     }
 
     @Override
     public void initParamPropertiesFromSerialized(IElementParameter param, String serialized) {
         if (param instanceof GenericElementParameter) {
-            Deserialized fromSerialized = ComponentProperties.fromSerialized(serialized);
+            Deserialized<ComponentProperties> fromSerialized = ComponentProperties.fromSerialized(serialized,
+                    ComponentProperties.class);
             if (fromSerialized != null) {
                 ComponentProperties componentProperties = fromSerialized.properties;
-                ((GenericElementParameter) param).setComponentProperties(
-                        ComponentsUtils.getCurrentComponentProperties(componentProperties, param.getName()));
+                ((GenericElementParameter) param).setComponentProperties(ComponentsUtils.getCurrentComponentProperties(
+                        componentProperties, param.getName()));
             }
         }
     }
@@ -1756,7 +1717,8 @@ public class Component extends AbstractComponent {
 
     @Override
     public Object genericFromSerialized(String serialized, String name) {
-        Deserialized fromSerialized = ComponentProperties.fromSerialized(serialized);
+        Deserialized<ComponentProperties> fromSerialized = ComponentProperties.fromSerialized(serialized,
+                ComponentProperties.class);
         if (fromSerialized != null) {
             ComponentProperties componentProperties = fromSerialized.properties;
             return ComponentsUtils.getGenericPropertyValue(componentProperties, name);
@@ -1772,5 +1734,60 @@ public class Component extends AbstractComponent {
             ComponentProperties componentProperties = ComponentsUtils.getComponentProperties(getName());
             return componentProperties.toSerialized();
         }
+    }
+
+    @Override
+    public Object getElementParameterValueFromComponentProperties(INode iNode, IElementParameter param) {
+        if (iNode != null) {
+            ComponentProperties iNodeComponentProperties = iNode.getComponentProperties();
+            if (iNodeComponentProperties != null && param instanceof GenericElementParameter) {
+                ComponentProperties paramComponentProperties = ComponentsUtils.getCurrentComponentProperties(
+                        iNodeComponentProperties, param.getName());
+                if (paramComponentProperties != null) {
+                    ((GenericElementParameter) param).setComponentProperties(paramComponentProperties);
+                    // update repository value
+                    Property property = iNodeComponentProperties.getValuedProperty(param.getName());
+                    if (property != null) {
+                        if (property.getTaggedValue(IComponentConstants.REPOSITORY_VALUE) != null) {
+                            param.setRepositoryValue(param.getName());
+                            param.setRepositoryValueUsed(true);
+                        }
+                    }
+                    return ComponentsUtils.getGenericPropertyValue(iNodeComponentProperties, param.getName());
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean setGenericPropertyValue(IElementParameter param) {
+        if (param == null || param.getName() == null) {
+            return false;
+        }
+        if (param instanceof GenericElementParameter) {
+            ComponentProperties componentProperties = ((Node) ((GenericElementParameter) param).getElement())
+                    .getComponentProperties();
+            ComponentProperties currentComponentProperties = ComponentsUtils.getCurrentComponentProperties(componentProperties,
+                    param.getName());
+            if (currentComponentProperties == null) {
+                return false;
+            }
+            Property property = componentProperties.getValuedProperty(param.getName());
+            if (property != null) {
+                property.setTaggedValue(IComponentConstants.REPOSITORY_VALUE, param.getName());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Getter for log. Will be used by ComponentUtil.
+     *
+     * @return the log
+     */
+    static Logger getLog() {
+        return log;
     }
 }
